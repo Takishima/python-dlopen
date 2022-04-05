@@ -1,24 +1,37 @@
-cmake_minimum_required(VERSION 2.8.7)
+cmake_minimum_required(VERSION 3.12)
 
-project(python-dlopen CXX)
+project(python-dlopen LANGUAGES CXX)
 
-find_package(PythonLibs REQUIRED)
-include_directories(${PYTHON_INCLUDE_DIRS})
+find_package(Python2 2.7 COMPONENTS Interpreter Development)
+find_package(Python3 3.0 COMPONENTS Interpreter Development)
 
-include_directories(${CMAKE_CURRENT_LIST_DIR})
-add_library(python-dlopen PythonFuncHandler.cpp)
+if(Python2_FOUND)
+  add_library(python2-dlopen PythonFuncHandler.cpp)
+  target_include_directories(python2-dlopen PUBLIC ${CMAKE_CURRENT_LIST_DIR})
+  target_link_libraries(python2-dlopen PUBLIC Python2::Module)
+endif()
+
+if(Python3_FOUND)
+  add_library(python3-dlopen PythonFuncHandler.cpp)
+  target_include_directories(python3-dlopen PUBLIC ${CMAKE_CURRENT_LIST_DIR})
+  target_link_libraries(python3-dlopen PUBLIC Python3::Module)
+endif()
 
 # ------------------------------------------------------------------------------
 
-include(CTest)
-enable_testing()
+add_custom_target(test)
 
-if(BUILD_TESTING)
-  add_executable(main_test ${CMAKE_CURRENT_LIST_DIR}/test/main.cpp)
-  target_link_libraries(main_test python-dlopen ${PYTHON_LIBRARIES} ${CMAKE_DL_LIBS})
+if(Python2_FOUND)
+  add_executable(main_test_py2 ${CMAKE_CURRENT_LIST_DIR}/test/main.cpp)
+  target_link_libraries(main_test_py2 PUBLIC python2-dlopen ${CMAKE_DL_LIBS})
 
-  add_test(
-    NAME try_run
-    COMMAND main_test ${PYTHON_LIBRARIES})
-endif(BUILD_TESTING)
+  add_custom_target(try_run_py2 COMMAND main_test_py2 ${Python2_LIBRARIES})
+  add_dependencies(test try_run_py2)
+endif()
 
+if(Python3_FOUND)
+  add_executable(main_test_py3 ${CMAKE_CURRENT_LIST_DIR}/test/main.cpp)
+  target_link_libraries(main_test_py3 PUBLIC python3-dlopen ${CMAKE_DL_LIBS})
+  add_custom_target(try_run_py3 COMMAND main_test_py3 ${Python3_LIBRARIES})
+  add_dependencies(test try_run_py3)
+endif()

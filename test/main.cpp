@@ -8,6 +8,8 @@ int main(int argc, char *argv[])
      if (argc < 2) {
 	  return -1;
      }
+
+     std::cout << "Called using: " << argv[0] << " " << argv[1] << '\n';
      
      {
 	  DLScopeGuard guard(argv[1]);
